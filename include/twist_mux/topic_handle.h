@@ -24,6 +24,8 @@
 
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/String.h>
+
 #include <geometry_msgs/Twist.h>
 
 #include <twist_mux/utils.h>
@@ -143,6 +145,7 @@ class VelocityTopicHandle : public TopicHandle_<geometry_msgs::Twist>
 {
 private:
   typedef TopicHandle_<geometry_msgs::Twist> base_type;
+  ros::Publisher pub_;
 
 public:
   typedef typename base_type::priority_type priority_type;
@@ -150,6 +153,7 @@ public:
   VelocityTopicHandle(ros::NodeHandle& nh, const std::string& name, const std::string& topic, double timeout, priority_type priority, TwistMux* mux)
     : base_type(nh, name, topic, timeout, priority, mux)
   {
+    pub_ = nh_.advertise<std_msgs::String>("twist_mux_topic", 1);
     subscriber_ = nh_.subscribe(topic_, 1, &VelocityTopicHandle::callback, this);
   }
 
@@ -169,6 +173,9 @@ public:
     // all the topic list; so far there's no O(1) solution.
     if (mux_->hasPriority(*this))
     {
+      std_msgs::String topic;
+      topic.data = name_;
+      pub_.publish(topic);
       mux_->publishTwist(msg);
     }
   }
